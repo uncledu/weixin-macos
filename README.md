@@ -1,6 +1,7 @@
 # weixin-macos
 使用frida进行逆向       
 frida -f /Applications/WeChat.app/Contents/MacOS/WeChat -l script.js        
+删除__handler__文件夹格外重要
 
 ### 第一次尝试，根据关键字失败
 报错：Failed to attach: unable to access process with pid 43649 from the current user account    
@@ -123,4 +124,35 @@ __write_nocancel() [libsystem_kernel.dylib] 被调用
 ```
 cd go/src/github.com/yincongcyincong/nixiang
 frida  -p 19738 -l ./script.js 
+```
+
+能打印 send
+```
+const wechat = Process.getModuleByName("WeChat");
+Interceptor.attach(wechat.findExportByName("recv"), {
+    onEnter(args) {
+        this.buf = args[1];
+        this.len = args[2].toInt32();
+    },
+    onLeave(retval) {
+        if (retval.toInt32() > 0) {
+            console.log("=== Recv Data ===");
+            console.log(hexdump(this.buf, { length: retval.toInt32() }));
+        }
+    }
+});
+
+Interceptor.attach(wechat.findExportByName("send"), {
+    onEnter(args) {
+        console.log("=== Send Data ===");
+        console.log(hexdump(args[1], { length: args[2].toInt32() }));
+    },
+    onLeave(retval) {
+        if (retval.toInt32() > 0) {
+            console.log("=== Send Data ===");
+            console.log(hexdump(this.buf, { length: retval.toInt32() }));
+        }
+    }
+});
+
 ```
