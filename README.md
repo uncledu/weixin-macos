@@ -12,6 +12,11 @@ frida-trace -p 进程号 -i "*Message*" --decorate 比较好用
 frida-trace -p 10677 -i '*send*'  -x '*objc_msgSend_noarg*' -x '*objc_msgSend_debug*' -x '*objc_msgSend*' -x "*_HIDisableSuddenTerminationForSendEvent*" -x "*_HIEnableSuddenTerminationForSendEvent*" -x "*SendEventToEventTarget*" -x "*s10RTCUtility10XPCMessageV4dictAA16RTCXPCDictionaryVvg*" -x "*MTLMessageContextEnd*" -x "*ictAA16RTCXPCDictionaryVvg*" -x "*_MTLMessageContextBegin_*" -x "*CFMachMessageCheckForAndDestroyUnsentMessag*" -x "*SLEventCopyAuthenticationMessage*" -x "*SendTextInputEvent_WithCompletionHandler*" -x '*mach_msg_send*' -x "*dispatch_mach_send_with_result_and_async_reply_4libxpc*" -x "*dispatch_mach_send_with_result_and_async_reply_4libxpc*" -x "*dispatch_mach_send_with_result*" --decorate --ui-port 60000     
 ```
 
+加密函数：
+```
+nixiang % frida-trace -p 62349 -i '*encrypt*' -i "*Encrypt*"  -x '*objc_msgSend_noarg*' -x '*objc_msgSend_debug*' -x '*objc_msgSend*' -x "*_HIDisableSuddenTerminationForSendEvent*" -x "*_HIEnableSuddenTerminationForSendEvent*" -x "*SendEventToEventTarget*" -x "*s10RTCUtility10XPCMessageV4dictAA16RTCXPCDictionaryVvg*" -x "*MTLMessageContextEnd*" -x "*ictAA16RTCXPCDictionaryVvg*" -x "*_MTLMessageContextBegin_*" -x "*CFMachMessageCheckForAndDestroyUnsentMessag*" -x "*SLEventCopyAuthenticationMessage*" -x "*SendTextInputEvent_WithCompletionHandler*" -x '*mach_msg_send*' -x "*dispatch_mach_send_with_result_and_async_reply_4libxpc*" -x "*dispatch_mach_send_with_result_and_async_reply_4libxpc*" -x "*dispatch_mach_send_with_result*" --decorate --ui-port 60000
+```
+
 打印上游调用
 ```
 defineHandler({
