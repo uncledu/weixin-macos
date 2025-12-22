@@ -2,8 +2,9 @@
  * 构造内存数据并调用 sub_10481C304
  */
 function callTargetFunction() {
-    const mod = Process.getModuleByName("WeChat");
-    const sub_10481C304_addr = ptr("0x10481C304").sub("0x100000000").add(mod.base);
+    // 1. 查找函数地址 (请确保模块名正确，这里假设是 WeChat)
+    const moduleName = "WeChat";
+    const sub_10481C304_addr = Module.findBaseAddress(moduleName).add(0x481C304);
     const sub_10481C304 = new NativeFunction(sub_10481C304_addr, 'void', ['pointer']);
 
     // 2. 准备原始字节数据 (Hex 形式)
@@ -25,17 +26,19 @@ function callTargetFunction() {
     // 4. 申请字符串内存并写入指针 (偏移 0x18)
     const cgiPath = "/cgi-bin/micromsg-bin/newsendmsg";
     const pathPtr = Memory.allocUtf8String(cgiPath);
+
+    // 将字符串地址写入结构体的 0x18 偏移处 (64位系统占8字节)
     structPtr.add(0x18).writePointer(pathPtr);
 
-    console.log("[+] 内存结构体已准备完毕: " + structPtr + " [+] 字符串地址: " + pathPtr + " 内容: " + cgiPath);
-    console.log();
+    console.log("[+] 内存结构体已准备完毕: " + structPtr);
+    console.log("[+] 字符串地址: " + pathPtr + " 内容: " + cgiPath);
 
     // 5. 调用函数
     try {
-        console.log("[*] 结构体内存布局 (调用前):");
         sub_10481C304(structPtr);
         console.log("[+] sub_10481C304 调用成功！");
 
+        console.log("[*] 结构体内存布局 (调用后):");
         console.log(hexdump(structPtr, { offset: 0, length: rawData.length, header: true, ansi: true }));
 
     } catch (e) {
