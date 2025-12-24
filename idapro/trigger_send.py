@@ -1,12 +1,21 @@
 import ida_idd
 import ida_bytes
+import idc
+
+sendMessageAddress = 0x1120eed40
+MessageAddress = 0x1120eee40
+
+task_id = 0x20000090
+idc.patch_dword(MessageAddress + 0x08, task_id)
+idc.patch_dword(sendMessageAddress + 0x20, task_id)
+idc.patch_dword(0x175ED6600, task_id)
 
 # 改task id， 改 cgi，改第一个指针即可
 payload = (
-    b"\x00\x00\x00\x02\x0A\x02\x00\x00"  # 0x00 // task id / cmd id 175ED6600
+    b"\x90\x00\x00\x20\x0A\x02\x00\x00"  # 0x00 // task id / cmd id 175ED6600
     b"\x00\x00\x00\x00\x00\x00\x00\x00"  # 0x08
     b"\x03\x00\x00\x00\x10\x00\x00\x00"  # 0x10
-    b"\xf0\x02\x38\x38\x0d\x00\x00\x00"  # 0x18 // cgi
+    b"\x40\xec\x0e\x12\x01\x00\x00\x00"  # 0x18 // cgi 1120eec40 
     b"\x20\x00\x00\x00\x00\x00\x00\x00"  # 0x20
     b"\x30\x00\x00\x00\x00\x00\x00\x80"  # 0x28
     b"\x00\x01\x01\x01\x00\xAA\xAA\xAA"  # 0x30
@@ -56,12 +65,12 @@ payload = (
     b"\x98\x67\xED\x75\x01\x00\x00\x00"  # 0x190
     b"\x00\x00\x00\x00\x00\x00\x00\x00"  # 0x198
 )
-ida_bytes.patch_bytes(0x175ED6600, payload)
 
+ida_bytes.patch_bytes(0x175ED6604, payload)
 my_func = ida_idd.Appcall.proto(0x10444A99C, "long long __fastcall sub_10444A99C(long long *a1, long long a2);")
 
 try:
-    my_func(0x7D72BD400, 0x175ED6600)
+    my_func(0x9816A9400, 0x175ED6600)
     print("Executed with manually set X0.")
 except Exception as e:
     print(f"Error: {e}")
