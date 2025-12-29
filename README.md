@@ -1,4 +1,6 @@
 # WeChat 4.0 Message hook
+本代码库中的所有代码、示例、文档及相关内容（以下简称“本项目”）仅供学习、研究和技术交流之目的使用。使用本项目所产生的任何风险（包括但不限于数据丢失、系统崩溃、安全问题、法律风险等）均由使用者自行承担。
+
 ![image](https://github.com/user-attachments/assets/401de4b8-5d10-48d9-8dcf-eecc8ae8682a)
 
 hook1是触发函数，和用户回车行为一样，触发startTask。
