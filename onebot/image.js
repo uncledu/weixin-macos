@@ -5,21 +5,21 @@ if (!baseAddr) {
 }
 console.log("[+] WeChat base address: " + baseAddr);
 
-// 触发函数地址,不同版本的地址看wechat_version 中的json文件复制过来
-var triggerFuncAddr = baseAddr.add();
-var sendMessageCallbackFunc = baseAddr.add();
-var messageCallbackFunc1 = baseAddr.add();
-var messageCallbackFunc2 = baseAddr.add();
-var messageCallbackFunc3 = baseAddr.add();
-var messageCallbackFunc4 = baseAddr.add();
+
+// // 触发函数地址,不同版本的地址看wechat_version 中的json文件复制过来
+var triggerFuncAddr = baseAddr.add(0x444A99C);
+var sendMessageCallbackFunc = baseAddr.add(0xEDB4678);
+var messageCallbackFunc1 = baseAddr.add(0x7f04a38);
+var messageCallbackFunc2 = baseAddr.add(0x7f04a90);
+var messageCallbackFunc3 = baseAddr.add(0x7fae030);
+var messageCallbackFunc4 = baseAddr.add(0x7f93d68);
 
 // 这个必须是绝对位置
-var triggerX1Payload = ptr();
-var req2bufEnterAddr = baseAddr.add(0x34566C0);
-var req2bufExitAddr = baseAddr.add(0x34577B8);
-var protobufAddr = baseAddr.add(0x227EC70);
-var receiveAddr = baseAddr.add();
-var patchProtobufAddr = baseAddr.add(0x227EC70);
+var triggerX1Payload = ptr(0x175ED6600);
+var req2bufEnterAddr = baseAddr.add(0x33EE8E8);
+var req2bufExitAddr = baseAddr.add(0x33EFA00);
+var protobufAddr = baseAddr.add(0x223EF58);
+var receiveAddr = baseAddr.add(0x23B5348);
 
 // 触发函数X0参数地址
 var globalMessagePtr = ptr(0);
@@ -27,13 +27,14 @@ var globalMessagePtr = ptr(0);
 // 消息体的一些指针地址
 var cgiAddr = ptr(0);
 var callBackFuncAddr = ptr(0);
-var sendMessageAddr = ptr(0);
+var callBackFuncAddr2 = ptr(0);
 
+var sendMessageAddr = ptr(0);
 var contentAddr = ptr(0);
 var insertMsgAddr = ptr(0);
-var receiverAddr = ptr(0)
+var receiverAddr = ptr(0);
+var htmlContentAddr = ptr(0);
 var protoX1PayloadAddr = ptr(0);
-var messageContentAddr = ptr(0);
 var protoX1PayloadLen = 1024;
 
 // 消息的taskId
@@ -48,6 +49,7 @@ function printAddr() {
     console.log("    - cgiAddr: " + cgiAddr);
     console.log("    - callBackFuncAddr: " + callBackFuncAddr);
     console.log("    - sendMessageAddr: " + sendMessageAddr);
+    console.log("    - contentAddr: " + contentAddr);
     console.log("    - globalMessagePtr: " + globalMessagePtr);
     console.log("    - triggerX1Payload: " + triggerX1Payload);
 }
@@ -67,13 +69,15 @@ function setupSendMessageDynamic() {
     // 分配原则：字符串给 64-128 字节，结构体按实际大小分配
     cgiAddr = Memory.alloc(128);
     callBackFuncAddr = Memory.alloc(16);
-    sendMessageAddr = Memory.alloc(256);
+    callBackFuncAddr2 = Memory.alloc(16);
+    sendMessageAddr = Memory.alloc(512);
     contentAddr = Memory.alloc(255);
     receiverAddr = Memory.alloc(24);
+    htmlContentAddr = Memory.alloc(24);
 
 
     // A. 写入字符串内容
-    patchHex(cgiAddr, "2F 63 67 69 2D 62 69 6E 2F 6D 69 63 72 6F 6D 73 67 2D 62 69 6E 2F 6E 65 77 73 65 6E 64 6D 73 67");
+    patchHex(cgiAddr, "2f 63 67 69 2d 62 69 6e 2f 6d 69 63 72 6f 6d 73 67 2d 62 69 6e 2f 75 70 6c 6f 61 64 6d 73 67 69 6d 67");
     patchHex(contentAddr, " ");
 
     // B. 构建 SendMessage 结构体 (X24 基址位置)
@@ -110,12 +114,10 @@ function setupSendMessageDynamic() {
 
     // 设置内容指针
     messageAddr.add(0xb8).writePointer(messageCallbackFunc3);
-    messageAddr.add(0xc0).writePointer(messageContentAddr);
-    messageAddr.add(0xc8).writeU64(uint64("0x0000000100000001"));
-    messageAddr.add(0xd0).writeU64(0x4);
-    messageAddr.add(0xd8).writeU64(0x1);
-    messageAddr.add(0xe0).writeU64(0x1);
-    messageAddr.add(0xe8).writePointer(messageCallbackFunc4);
+    callBackFuncAddr2.writePointer(messageCallbackFunc4);
+    messageAddr.add(0xc0).writePointer(callBackFuncAddr2);
+
+
 
 
     console.log(" [+] messageAddr Object: ", hexdump(messageAddr, {
@@ -155,27 +157,6 @@ function setTriggerAttach() {
 setImmediate(setTriggerAttach);
 
 
-function patchProtoBuf() {
-    Interceptor.attach(patchProtobufAddr, {
-        onEnter: function (args) {
-            var sp = this.context.sp;
-            var firstValue = sp.readU32();
-            if (firstValue !== taskIdGlobal) {
-                console.log("[+] Patch Protobuf 拦截未命中，跳过...");
-                return;
-            }
-
-            this.context.pc = patchProtoBufAddr.add(4);
-
-        },
-        onLeave: function (retval) {
-
-        }
-    });
-}
-
-setImmediate(patchProtoBuf);
-
 function manualTrigger(taskId, receiver, content) {
     console.log("[+] Manual Trigger Started...");
     if (globalMessagePtr.isNull()) {
@@ -210,7 +191,7 @@ function manualTrigger(taskId, receiver, content) {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x08
         0x03, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, // 0x10
         0x40, 0xec, 0x0e, 0x12, 0x01, 0x00, 0x00, 0x00, // 0x18
-        0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x20
+        0x22, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x20
         0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, // 0x28
         0x00, 0x01, 0x01, 0x01, 0x00, 0xAA, 0xAA, 0xAA, // 0x30
         0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, // 0x38
@@ -406,6 +387,14 @@ function attachProto() {
             console.log("[+] Protobuf 拦截命中");
 
             var sp = this.context.sp;
+            console.log("[+] Protobuf 拦截命中，SP: " + sp, hexdump(sp, {
+                offset: 0,
+                length: 16,
+                header: true,
+                ansi: true
+            }));
+
+
             var firstValue = sp.readU32();
             if (firstValue !== taskIdGlobal) {
                 console.log("[+] Protobuf 拦截未命中，跳过...");

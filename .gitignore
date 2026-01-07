@@ -7,3 +7,4 @@ data
 .venv
 go_al/*.go
 onebot/onebot
+*.tar.gz
