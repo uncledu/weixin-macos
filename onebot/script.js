@@ -88,23 +88,22 @@ function generateAESKey() {
 // -------------------------全局变量分区-------------------------
 
 // 文本消息全局变量
-var sendTextFuncAddr = baseAddr.add(0x448A858); // 这个必须是绝对位置
 var protobufAddr = baseAddr.add(0x227EC70);
 var patchTextProtobufAddr = baseAddr.add(0x227EC4C);
 var PatchTextProtobufDeleteAddr = baseAddr.add(0x227EC88);
 var textCgiAddr = ptr(0);
 var sendTextMessageAddr = ptr(0);
 var textMessageAddr = ptr(0);
-var contentAddr = ptr(0);
 var textProtoX1PayloadAddr = ptr(0);
 var sendMessageCallbackFunc = ptr(0);
 var messageCallbackFunc1 = baseAddr.add(0x7fa1050);
 
 
-// req2buf全局变量
+// 双方公共使用的地址
 var triggerX1Payload = ptr(0x175ED6600);
 var req2bufEnterAddr = baseAddr.add(0x34566C0);
 var req2bufExitAddr = baseAddr.add(0x34577D8);
+var sendFuncAddr = baseAddr.add(0x448A858);
 var insertMsgAddr = ptr(0);
 var sendMsgType = "";
 
@@ -145,8 +144,6 @@ var lastSendTime = 0;
 
 
 // -------------------------发送文本消息分区-------------------------
-
-
 // 初始化进行内存的分配
 function setupSendTextMessageDynamic() {
     console.log("[+] Starting Dynamic Message Patching...");
@@ -156,11 +153,9 @@ function setupSendTextMessageDynamic() {
     textCgiAddr = Memory.alloc(128);
     sendTextMessageAddr = Memory.alloc(256);
     textMessageAddr = Memory.alloc(256);
-    contentAddr = Memory.alloc(16);
 
     // A. 写入字符串内容
     patchString(textCgiAddr, "/cgi-bin/micromsg-bin/newsendmsg");
-    patchString(contentAddr, " ");
 
     // B. 构建 sendTextMessageAddr 结构体 (X24 基址位置)
     sendTextMessageAddr.add(0x00).writeU64(0);
@@ -205,7 +200,7 @@ function patchTextProtoBuf() {
         cw.flush();
     });
 
-    console.log("[+] Patching BL to NOP at " + patchTextProtobufAddr + " completed.");
+    console.log("[+] Patching patchTextProtobufAddr " + patchTextProtobufAddr + " 成功.");
 
     Memory.patchCode(PatchTextProtobufDeleteAddr, 4, code => {
         const cw = new Arm64Writer(code, {pc: PatchTextProtobufDeleteAddr});
@@ -213,10 +208,13 @@ function patchTextProtoBuf() {
         cw.flush();
     });
 
-    console.log("[+] Patching BL DELETE to NOP at " + PatchTextProtobufDeleteAddr + " completed.");
+    console.log("[+] Patching PatchTextProtobufDeleteAddr " + PatchTextProtobufDeleteAddr + " 成功.");
 }
 
-setImmediate(patchTextProtoBuf);
+setTimeout(function() {
+    console.log("[+] 3秒等待结束，准备执行 Patch...");
+    patchTextProtoBuf();
+}, 3000);
 
 function triggerSendTextMessage(taskId, receiver, content) {
     console.log("[+] Manual Trigger Started...");
@@ -297,13 +295,13 @@ function triggerSendTextMessage(taskId, receiver, content) {
     sendMsgType = "text"
 
     console.log("finished init payload")
-    const MMStartTask = new NativeFunction(sendTextFuncAddr, 'int64', ['pointer']);
+    const MMStartTask = new NativeFunction(sendFuncAddr, 'int64', ['pointer']);
 
     // 5. 调用函数
     try {
         // const arg1 = globalMessagePtr; // 第一个指针参数
         const arg2 = triggerX1Payload; // 第二个参数 0x175ED6600
-        console.log(`[+] Calling MMStartTask  at ${sendTextFuncAddr} with args: (${arg2})`);
+        console.log(`[+] Calling MMStartTask  at ${sendFuncAddr} with args: (${arg2})`);
         const result = MMStartTask(arg2);
         console.log("[+] Execution MMStartTask  Success. Return value: " + result);
         return "ok";
@@ -456,14 +454,14 @@ function setupSendImgMessageDynamic() {
     // 分配原则：字符串给 64-128 字节，结构体按实际大小分配
     imgCgiAddr = Memory.alloc(128);
     sendImgMessageAddr = Memory.alloc(256);
-    imgMessageAddr = Memory.alloc(512);
+    imgMessageAddr = Memory.alloc(256);
     uploadFunc1Addr = Memory.alloc(24);
     uploadFunc2Addr = Memory.alloc(24);
     imageIdAddr = Memory.alloc(256);
     md5Addr = Memory.alloc(256);
     uploadAesKeyAddr = Memory.alloc(256);
     ImagePathAddr1 = Memory.alloc(256);
-    uploadImagePayload = Memory.alloc(512);
+    uploadImagePayload = Memory.alloc(1024);
 
     // A. 写入字符串内容
     patchString(imgCgiAddr, "/cgi-bin/micromsg-bin/uploadmsgimg");
@@ -503,14 +501,14 @@ function setupSendImgMessageDynamic() {
 setImmediate(setupSendImgMessageDynamic);
 
 
-function patchProtoBuf() {
+function patchImgProtoBuf() {
     Memory.patchCode(patchImgProtobufFunc1, 4, code => {
         const cw = new Arm64Writer(code, {pc: patchImgProtobufFunc1});
         cw.putNop();
         cw.flush();
     });
 
-    console.log("[+] Patching BL to NOP at " + patchImgProtobufFunc1 + " completed.");
+    console.log("[+] Patching patchImgProtobufFunc1 " + patchImgProtobufFunc1 + " 成功.");
 
     Memory.patchCode(patchImgProtobufFunc2, 4, code => {
         const cw = new Arm64Writer(code, {pc: patchImgProtobufFunc2});
@@ -518,7 +516,7 @@ function patchProtoBuf() {
         cw.flush();
     });
 
-    console.log("[+] Patching BL to NOP at " + patchImgProtobufFunc2 + " completed.");
+    console.log("[+] Patching patchImgProtobufFunc2 " + patchImgProtobufFunc2 + " 成功.");
 
     Memory.patchCode(imgProtobufDeleteAddr, 4, code => {
         const cw = new Arm64Writer(code, {pc: imgProtobufDeleteAddr});
@@ -526,15 +524,19 @@ function patchProtoBuf() {
         cw.flush();
     });
 
-    console.log("[+] Patching BL DELETE to NOP at " + imgProtobufDeleteAddr + " completed.");
+    console.log("[+] Patching imgProtobufDeleteAddr " + imgProtobufDeleteAddr + " 成功.");
 }
 
-setImmediate(patchProtoBuf);
+
+setTimeout(function() {
+    console.log("[+] 5秒等待结束，准备执行 Patch...");
+    patchImgProtoBuf();
+}, 5000);
 
 function triggerSendImgMessage(taskId, sender, receiver) {
     console.log("[+] Manual Trigger Started...");
-    if (!taskId || !receiver) {
-        console.error("[!] taskId or Receiver or Content is empty!");
+    if (!taskId || !receiver || !sender) {
+        console.error("[!] taskId or receiver or sender is empty!");
         return "fail";
     }
 
@@ -610,12 +612,12 @@ function triggerSendImgMessage(taskId, sender, receiver) {
     sendMsgType = "img"
 
     console.log("finished init payload")
-    const MMStartTask = new NativeFunction(triggerFuncAddr, 'int64', ['pointer']);
+    const MMStartTask = new NativeFunction(sendFuncAddr, 'int64', ['pointer']);
 
     // 5. 调用函数
     try {
         const arg2 = triggerX1Payload; // 第二个参数 0x175ED6600
-        console.log(`[+] Calling MMStartTask  at ${triggerFuncAddr} with args: (${arg2})`);
+        console.log(`[+] Calling MMStartTask  at ${sendFuncAddr} with args: (${arg2})`);
         const result = MMStartTask(arg2);
         console.log("[+] Execution MMStartTask  Success. Return value: " + result);
         return "ok";
