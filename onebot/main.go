@@ -32,7 +32,7 @@ var (
 	fridaScript *frida.Script
 	session     *frida.Session
 	taskId      = int64(0x20000000)
-	myWechatId  = ""
+	myWechatId  = "wxid_ldftuhe36izg19"
 	
 	msgChan    = make(chan *SendMsg, 10)
 	finishChan = make(chan struct{})
@@ -192,9 +192,6 @@ func loadJs() {
 						if t.(string) == "send" {
 							go SendHttpReq(msg)
 						} else if t.(string) == "finish" {
-							if selfId, ok := pMap["self_id"]; ok {
-								myWechatId = selfId.(string)
-							}
 							finishChan <- struct{}{}
 						}
 					}
@@ -280,6 +277,7 @@ func SendWorker() {
 }
 
 func SendWechatMsg(m *SendMsg) {
+	time.Sleep(1 * time.Second)
 	currTaskId := atomic.AddInt64(&taskId, 1)
 	log.Printf("📩 收到任务: %d\n", currTaskId)
 	
@@ -424,6 +422,8 @@ func SaveBase64Image(base64Data string) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("base64 decode failed: %v", err)
 	}
+	salt := []byte(fmt.Sprintf("\n#md5_salt_%d_%d#", time.Now().UnixNano(), rand.Intn(10000)))
+	data = append(data, salt...)
 	
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	randomNumber := r.Intn(1000) // 生成 0-999 的随机数
@@ -469,7 +469,7 @@ func DetectImageFormat(data []byte) string {
 	
 	switch {
 	case bytes.HasPrefix(data, []byte{0xFF, 0xD8, 0xFF}):
-		return "jpeg"
+		return "jpg"
 	case bytes.HasPrefix(data, []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}):
 		return "png"
 	case bytes.HasPrefix(data, []byte("GIF87a")) || bytes.HasPrefix(data, []byte("GIF89a")):
