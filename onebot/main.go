@@ -92,7 +92,7 @@ func initFlag() {
 	flag.StringVar(&config.OnebotToken, "token", "MuseBot", "OneBot Token: 123456")
 	flag.StringVar(&config.ImagePath, "image_path", "", "图片路径: /Users/xxx/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/xxx/temp/xxx/2026-01/Img/")
 	
-	//flag.StringVar(&config.WechatConf, "wechat_conf", "../wechat_version/4_1_6_12_mac.json", "微信配置文件路径: ../wechat_version/4_1_6_12_mac.json")
+	flag.StringVar(&config.WechatConf, "wechat_conf", "../wechat_version/4_1_6_47_mac.json", "微信配置文件路径: ../wechat_version/4_1_6_12_mac.json")
 	
 	flag.Parse()
 	
@@ -103,7 +103,7 @@ func initFlag() {
 	fmt.Println("WechatPid", config.WechatPid)
 	fmt.Println("OnebotToken", config.OnebotToken)
 	fmt.Println("ImagePath", config.ImagePath)
-	//fmt.Println("WechatConf", config.WechatConf)
+	fmt.Println("WechatConf", config.WechatConf)
 	
 }
 
@@ -144,16 +144,16 @@ func initFrida() {
 }
 
 func loadJs() {
-	//jsonData, err := os.ReadFile(config.WechatConf)
-	//if err != nil {
-	//	log.Fatalf("读取文件失败: %v\n", err)
-	//}
+	jsonData, err := os.ReadFile(config.WechatConf)
+	if err != nil {
+		log.Fatalf("读取文件失败: %v\n", err)
+	}
 	
 	// 2. 将 JSON 解析为 Map
 	var wechatHookConf map[string]interface{}
-	//if err := json.Unmarshal(jsonData, &wechatHookConf); err != nil {
-	//	log.Fatalf("解析 JSON 失败: %v\n", err)
-	//}
+	if err := json.Unmarshal(jsonData, &wechatHookConf); err != nil {
+		log.Fatalf("解析 JSON 失败: %v\n", err)
+	}
 	
 	codeTemplate, err := os.ReadFile("./script.js")
 	if err != nil {

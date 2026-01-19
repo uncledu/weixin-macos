@@ -254,34 +254,34 @@ function getCleanString(uint8Array) {
 // -------------------------全局变量分区-------------------------
 
 // 文本消息全局变量
-var protobufAddr = baseAddr.add(0x227EC70);
-var patchTextProtobufAddr = baseAddr.add(0x227EC4C);
-var PatchTextProtobufDeleteAddr = baseAddr.add(0x227EC88);
+var protobufAddr = baseAddr.add({{.protobufAddr}});
+var patchTextProtobufAddr = baseAddr.add({{.patchTextProtobufAddr}});
+var PatchTextProtobufDeleteAddr = baseAddr.add({{.PatchTextProtobufDeleteAddr}});
 var textCgiAddr = ptr(0);
 var sendTextMessageAddr = ptr(0);
 var textMessageAddr = ptr(0);
 var textProtoX1PayloadAddr = ptr(0);
 var sendMessageCallbackFunc = ptr(0);
-var messageCallbackFunc1 = baseAddr.add(0x7fa1050);
+var messageCallbackFunc1 = baseAddr.add({{.messageCallbackFunc1}});
 
 
 // 双方公共使用的地址
-var triggerX1Payload = ptr(0x175ED6600);
-var req2bufEnterAddr = baseAddr.add(0x34566C0);
-var req2bufExitAddr = baseAddr.add(0x34577D8);
-var sendFuncAddr = baseAddr.add(0x448A858);
+var triggerX1Payload = ptr({{.triggerX1Payload}});
+var req2bufEnterAddr = baseAddr.add({{.req2bufEnterAddr}});
+var req2bufExitAddr = baseAddr.add({{.req2bufExitAddr}});
+var sendFuncAddr = baseAddr.add({{.sendFuncAddr}});
 var insertMsgAddr = ptr(0);
 var sendMsgType = "";
-var buf2RespAddr = baseAddr.add(0x347BD44);
+var buf2RespAddr = baseAddr.add({{.buf2RespAddr}});
 
 // 图片消息全局变量
 var sendImgMessageCallbackFunc = ptr(0x0);
-var imgMessageCallbackFunc1 = baseAddr.add(0x7fa0b18);
-var imgProtobufAddr = baseAddr.add(0x2275BFC);
-var patchImgProtobufFunc1 = baseAddr.add(0x2275BB8)
-var patchImgProtobufFunc2 = baseAddr.add(0x2275BD8);
-var imgProtobufDeleteAddr = baseAddr.add(0x2275C14);
-var CndOnCompleteAddr = baseAddr.add(0x34154E0);
+var imgMessageCallbackFunc1 = baseAddr.add({{.imgMessageCallbackFunc1}});
+var imgProtobufAddr = baseAddr.add({{.imgProtobufAddr}});
+var patchImgProtobufFunc1 = baseAddr.add({{.patchImgProtobufFunc1}})
+var patchImgProtobufFunc2 = baseAddr.add({{.patchImgProtobufFunc2}});
+var imgProtobufDeleteAddr = baseAddr.add({{.imgProtobufDeleteAddr}});
+var CndOnCompleteAddr = baseAddr.add({{.CndOnCompleteAddr}});
 
 var imgCgiAddr = ptr(0);
 var sendImgMessageAddr = ptr(0);
@@ -1097,7 +1097,7 @@ function setReceiver() {
 
             if (sender === "" || receiver === "" || content === "" || xml === "") {
                 console.log("字段缺失，无法解析 sender:" + sender + " receiver:" + receiver + hexdump(currentPtr, {
-                    length: x2,
+                    length: 128,
                     header: true,
                     ansi: true,
                 }))
@@ -1136,7 +1136,12 @@ function setReceiver() {
                 const atUserMatch = xml.match(/<atuserlist>([\s\S]*?)<\/atuserlist>/);
                 const atUser = atUserMatch ? atUserMatch[1] : null;
                 if (atUser) {
-                    messages.push({type: "at", data: {qq: atUser}});
+                    atUser.split(',').forEach(atUser => {
+                        atUser = atUser.trim();
+                        if (atUser) {
+                            messages.push({type: "at", data: {qq: atUser}});
+                        }
+                    });
                 }
             }
 
