@@ -39,3 +39,6 @@ manualUpload("wxid_7wd1ece99f7i21", "8dd4755e12e052fa5647a883e6bf0783", "/Users/
 manualTrigger(0x20000199, "wxid_xxx","wxid_xxx")
 
 ```
+
+## 支持onebot协议 （http接口）
+https://github.com/yincongcyincong/weixin-macos/blob/main/onebot/readme.md    
