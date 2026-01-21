@@ -82,59 +82,6 @@ function generateAESKey() {
     return key;
 }
 
-
-function readVarint(addr) {
-    let value = 0;
-    let shift = 0;
-    let count = 0;
-
-    while (true) {
-        let byte = addr.add(count).readU8();
-        // 取低7位进行累加
-        value |= (byte & 0x7f) << shift;
-        count++; // 消耗了一个字节
-
-        // 如果最高位是0，跳出循环
-        if ((byte & 0x80) === 0) break;
-
-        shift += 7;
-        if (count > 5) return -1; // 安全校验，防止死循环
-    }
-
-    return {
-        value: value,      // 最终长度数值 (例如 251)
-        byteLength: count  // 长度字段占用的字节数 (例如 2)
-    };
-}
-
-function isPrintableOrChinese(startPtr, maxScanLength) {
-    let offset = 0;
-    while (offset < maxScanLength) {
-        let b = startPtr.add(offset).readU8();
-
-        if (b === 0) {
-            // 扫描到 \0，且之前没有发现异常字节
-            return offset > 0; // 如果第一个就是 \0，视为非字符串（可能是空指针）
-        }
-
-        // 判定逻辑：
-        // 1. 可见 ASCII (32-126) 或 换行/制表符 (9, 10, 13)
-        let isAscii = (b >= 32 && b <= 126) || (b === 9 || b === 10 || b === 13);
-
-        // 2. 汉字 UTF-8 特征：第一个字节通常 >= 0x80 (128)
-        // 严谨点：UTF-8 汉字首字节通常在 0xE4-0xE9 之间，后续字节在 0x80-0xBF 之间
-        // 这里简化处理：如果是高位字符，我们暂时放行，由 readUtf8String 最终处理
-        let isHighBit = (b >= 0x80);
-
-        if (!isAscii && !isHighBit) {
-            // 发现既不是 ASCII 也不是高位字节（如 0x01-0x1F 的控制字符），判定为指针
-            return false;
-        }
-        offset++;
-    }
-    return true;
-}
-
 function getProtobufRawBytes(pBuffer, scanSize) {
     const tags = [0x12, 0x1A, 0x2A, 0x52];
     let uint8Array;
@@ -247,6 +194,18 @@ function getCleanString(uint8Array) {
         }
     }
     return out;
+}
+
+function generateBytes(n) {
+    // 生成随机字符串
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+
+    for (let i = 0; i < n; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    return stringToHexArray(result);
 }
 
 // -------------------------基础函数分区-------------------------
@@ -799,18 +758,11 @@ function attachProto() {
         onEnter: function (args) {
             console.log("[+] Protobuf 拦截命中");
 
-            // var sp = this.context.sp;
-            // var firstValue = sp.readU32();
-            // if (firstValue !== taskIdGlobal) {
-            //     console.log("[+] Protobuf 拦截未命中，跳过...");
-            //     return;
-            // }
-
             const type = [0x0A, 0x40, 0x0A, 0x01, 0x00]
-            const msgId = [0x10, 0xc6, 0xbc, 0x90, 0xb9, 0x08] // 时间戳
+            const msgId = [0x10].concat(generateRandom5ByteVarint())
             const cpHeader = [0x1A, 0x10]
             // m30c4674f5a0b9d
-            const cp = [0x6D, 0x33, 0x30, 0x63, 0x34, 0x36, 0x37, 0x34, 0x66, 0x35, 0x61, 0x30, 0x62, 0x39, 0x64, 0x30]
+            const cp = generateBytes(16)
 
             const randomId = [0x20, 0xAF, 0xAC, 0x90, 0x93, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01]
             const sysHeader = [0x2A, 0x15]
