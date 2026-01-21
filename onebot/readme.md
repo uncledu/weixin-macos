@@ -2,7 +2,7 @@
 
 ### 使用方式和脚本基本一致：        
    1. 编译main.go或者直接下载编译好的onebot二进制文件       
-   2. 如果不想关闭SIP直接使用,需要找到自己的图片位置：./onebot -type=gadget -image_path='/Users/xx/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/wxid_xxx/temp/xxx/2026-01/Img/'
+   2. 如果不想关闭SIP直接使用，需要按gadget文档操作wechat的二进制，[文档](https://github.com/yincongcyincong/weixin-macos/tree/main/frida-gadget),需要找到自己的图片位置：./onebot -type=gadget -image_path='/Users/xx/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/wxid_xxx/temp/xxx/2026-01/Img/'
    3. 如果关闭了SIP， 直接使用pid即可，./onebot -wechat_pid=18835 -image_path='/Users/xxx/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/wxid_xxx/temp/xxx/2026-01/Img/'
    4. 发送一张图片，如果失败证明已经patch成功，可以正常使用。
    5. 启动onebot服务，默认监听127.0.0.1:58080，可以通过http接口发送消息。
